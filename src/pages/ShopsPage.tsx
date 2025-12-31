@@ -4,70 +4,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ShopCard } from "@/components/home/ShopCard";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, MapPin, SlidersHorizontal } from "lucide-react";
-
-const allShops = [
-  {
-    id: 1,
-    name: "Quick Print Hub",
-    address: "123 MG Road, Koramangala",
-    distance: "0.8 km",
-    rating: 4.8,
-    isOpen: true,
-    isHighTraffic: false,
-    estimatedTime: "5-10 min",
-  },
-  {
-    id: 2,
-    name: "Rapid Xerox Center",
-    address: "456 Brigade Road, Near Metro",
-    distance: "1.2 km",
-    rating: 4.5,
-    isOpen: true,
-    isHighTraffic: true,
-    estimatedTime: "15-20 min",
-  },
-  {
-    id: 3,
-    name: "PrintEasy Solutions",
-    address: "789 Indiranagar, 12th Main",
-    distance: "1.5 km",
-    rating: 4.7,
-    isOpen: true,
-    isHighTraffic: false,
-    estimatedTime: "8-12 min",
-  },
-  {
-    id: 4,
-    name: "CopyWorld Express",
-    address: "321 HSR Layout, Sector 7",
-    distance: "2.0 km",
-    rating: 4.3,
-    isOpen: false,
-    isHighTraffic: false,
-    estimatedTime: "Closed",
-  },
-  {
-    id: 5,
-    name: "DocuPrint Pro",
-    address: "555 Whitefield, ITPL Road",
-    distance: "2.5 km",
-    rating: 4.9,
-    isOpen: true,
-    isHighTraffic: false,
-    estimatedTime: "10-15 min",
-  },
-  {
-    id: 6,
-    name: "Swift Print Station",
-    address: "888 Electronic City, Phase 1",
-    distance: "3.0 km",
-    rating: 4.6,
-    isOpen: true,
-    isHighTraffic: true,
-    estimatedTime: "20-25 min",
-  },
-];
+import { Search, Filter, MapPin, SlidersHorizontal, Loader2 } from "lucide-react";
+import { getShops } from "@/lib/api";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 const ShopsPage = () => {
   const navigate = useNavigate();
@@ -75,8 +15,24 @@ const ShopsPage = () => {
   const initialQuery = searchParams.get("q") || "";
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [shops, setShops] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredShops = allShops.filter(
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const data = await getShops();
+        setShops(data);
+      } catch (error) {
+        toast.error("Failed to fetch shops");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchShops();
+  }, []);
+
+  const filteredShops = shops.filter(
     (shop) =>
       shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       shop.address.toLowerCase().includes(searchQuery.toLowerCase())
