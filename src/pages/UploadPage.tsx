@@ -6,8 +6,11 @@ import { FileUploader } from "@/components/upload/FileUploader";
 import { FileList } from "@/components/upload/FileList";
 import { PrintSettings } from "@/components/upload/PrintSettings";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Store, AlertCircle } from "lucide-react";
+import { ArrowRight, Store, AlertCircle, Loader2 } from "lucide-react";
 import type { UploadedFile, PrintSettingsType } from "@/types/upload";
+import { uploadFile, updateFileSettings, createPaymentOrder } from "@/lib/api";
+import { loadRazorpay } from "@/lib/razorpay";
+import { toast } from "sonner";
 
 const defaultSettings: PrintSettingsType = {
   colorMode: null,
@@ -23,23 +26,38 @@ const UploadPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const shopId = searchParams.get("shop");
-  
+
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [globalSettings, setGlobalSettings] = useState<PrintSettingsType>(defaultSettings);
   const [useGlobalSettings, setUseGlobalSettings] = useState(true);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFilesAdded = useCallback((newFiles: File[]) => {
-    const uploadedFiles: UploadedFile[] = newFiles.map((file) => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file,
-      settings: { ...defaultSettings },
-      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
-    }));
-    setFiles((prev) => [...prev, ...uploadedFiles]);
+  const handleFilesAdded = useCallback(async (newFiles: File[]) => {
+    setIsUploading(true);
+    try {
+      const uploadedResults = await Promise.all(
+        newFiles.map(async (file) => {
+          const result = await uploadFile(file);
+          return {
+            id: result.id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            file,
+            settings: { ...defaultSettings },
+            preview: result.url, // Backend preview URL
+          };
+        })
+      );
+      setFiles((prev) => [...prev, ...uploadedResults]);
+      toast.success("Files uploaded successfully");
+    } catch (error) {
+      toast.error("Failed to upload files");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
   }, []);
 
   const handleRemoveFile = useCallback((id: string) => {
@@ -47,12 +65,18 @@ const UploadPage = () => {
     if (activeFileId === id) setActiveFileId(null);
   }, [activeFileId]);
 
-  const handleUpdateFileSettings = useCallback((id: string, settings: Partial<PrintSettingsType>) => {
+  const handleUpdateFileSettings = useCallback(async (id: string, settings: Partial<PrintSettingsType>) => {
     setFiles((prev) =>
       prev.map((f) =>
         f.id === id ? { ...f, settings: { ...f.settings, ...settings } } : f
       )
     );
+    try {
+      // Sync with backend (optional but recommended)
+      await updateFileSettings(id, settings);
+    } catch (error) {
+      console.error("Failed to sync settings:", error);
+    }
   }, []);
 
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -68,12 +92,50 @@ const UploadPage = () => {
     );
   });
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!shopId) {
       navigate("/shops");
-    } else {
-      // Navigate to checkout with files data
-      navigate(`/checkout?shop=${shopId}`);
+      return;
+    }
+
+    const res = await loadRazorpay();
+
+    if (!res) {
+      toast.error("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
+
+    try {
+      // Create order on backend (dummy amount for now)
+      const order = await createPaymentOrder(100);
+
+      const options = {
+        key: "rzp_test_placeholder", // Replace with your actual key
+        amount: order.amount,
+        currency: order.currency,
+        name: "PrintEasy",
+        description: "Payment for Printing Service",
+        order_id: order.id,
+        handler: function (response: any) {
+          toast.success("Payment Successful! Your print job is sent.");
+          console.log(response);
+          // Redirect to success page or clear state
+        },
+        prefill: {
+          name: "User Name",
+          email: "user@example.com",
+          contact: "9999999999",
+        },
+        theme: {
+          color: "#7c3aed",
+        },
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      toast.error("Failed to initiate payment");
+      console.error(error);
     }
   };
 
@@ -112,7 +174,7 @@ const UploadPage = () => {
             {/* Left Column - Upload & Files */}
             <div className="space-y-6">
               <FileUploader onFilesAdded={handleFilesAdded} />
-              
+
               {files.length > 0 && (
                 <FileList
                   files={files}
