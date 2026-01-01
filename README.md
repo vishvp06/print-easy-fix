@@ -11,19 +11,18 @@ PrintEasy is a premium, full-stack web application designed to simplify the proc
 - **Granular Configuration**: Apply global or per-file print settings (Color/BW, Duplex, Paper Size, etc.).
 - **Secure Payments**: Integrated Razorpay gateway for seamless transactions.
 - **Privacy First**: Automatic 16-hour TTL (Time-To-Live) for all uploaded documents.
-- **Premium UI**: Dark-mode enabled, glassmorphic design built with Framer Motion and Shadcn UI.
+- **Premium UI**: Dark-mode enabled, glassmorphic design built with Tailwind CSS and Shadcn UI.
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Framework**: [React 18](https://reactjs.org/) + [Vite](https://vitejs.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: JavaScript (ES6+)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **State Management**: [TanStack Query (React Query)](https://tanstack.com/query/latest)
 - **UI Components**: [Shadcn UI](https://ui.shadcn.com/) / [Radix UI](https://www.radix-ui.com/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **HTTP Client**: [Axios](https://axios-http.com/)
 
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
@@ -54,6 +53,7 @@ PrintEasy is a premium, full-stack web application designed to simplify the proc
    npm install
    npm run dev
    ```
+   The frontend will be available at `http://localhost:8080`.
 
 3. **Backend Setup**
    ```bash
@@ -63,7 +63,10 @@ PrintEasy is a premium, full-stack web application designed to simplify the proc
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    
    pip install -r requirements.txt
+   python main.py
    ```
+   The API will be available at `http://localhost:8000`.
+   API documentation (Swagger) will be at `http://localhost:8000/docs`.
 
 ### Configuration
 Create a `.env` file in the `backend/` directory:
@@ -71,15 +74,6 @@ Create a `.env` file in the `backend/` directory:
 RAZORPAY_KEY_ID=your_key_id
 RAZORPAY_KEY_SECRET=your_key_secret
 ```
-
-### Running the Application
-1. Start the backend:
-   ```bash
-   cd backend
-   python main.py
-   ```
-2. The frontend will be available at `http://localhost:8080`.
-3. The API documentation (Swagger) will be available at `http://localhost:8000/docs`.
 
 ---
 
@@ -89,10 +83,40 @@ RAZORPAY_KEY_SECRET=your_key_secret
 
 ---
 
+## 📁 Project Structure
+```
+print-easy-fix/
+├── app/                    # Next.js app directory
+│   ├── page.js            # Homepage
+│   ├── shops/             # Shops listing page
+│   ├── upload/            # File upload page
+│   ├── about/             # About page
+│   └── enterprise/        # Enterprise page
+├── components/            # React components
+│   ├── ui/               # UI components (Button, etc.)
+│   ├── layout/           # Layout components
+│   ├── home/             # Home page components
+│   └── upload/           # Upload page components
+├── lib/                  # Utility functions
+│   ├── api.js           # API client
+│   ├── utils.js         # Helper functions
+│   └── razorpay.js      # Razorpay utilities
+├── backend/              # FastAPI backend
+│   ├── main.py          # FastAPI app
+│   ├── models.py        # Database models
+│   ├── crud.py          # Database operations
+│   ├── schemas.py       # Pydantic schemas
+│   ├── payments.py      # Razorpay integration
+│   └── tasks.py         # Background tasks
+└── public/              # Static assets
+```
+
+---
+
 ## 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
 ## 📄 License
-Internal use only. Copyright © 2025 PrintEasy.
+Internal use only. Copyright © 2026 PrintEasy.
